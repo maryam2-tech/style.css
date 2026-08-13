@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Color Catcher 🌈</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: linear-gradient(135deg, #fff4b8, #b8f2ff);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.game {
+    width: 90%;
+    max-width: 850px;
+    min-height: 600px;
+    background: white;
+    border-radius: 25px;
+    padding: 25px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+}
+
+h1 {
+    color: #ff6b6b;
+    font-size: 42px;
+    margin: 5px 0;
+}
+
+.subtitle {
+    color: #555;
+    font-size: 18px;
+}
+
+.info {
+    display: flex;
+    justify-content: space-around;
+    margin: 20px 0;
+    font-size: 20px;
+    font-weight: bold;
+}
+
+.target {
+    background: #f3f3f3;
+    padding: 15px;
+    border-radius: 15px;
+    font-size: 24px;
+    margin-bottom: 15px;
+}
+
+#targetColor {
+    font-weight: bold;
+}
+
+#gameArea {
+    position: relative;
+    height: 330px;
+    border-radius: 20px;
+    background: #f9fbff;
+    border: 3px dashed #aaa;
+    overflow: hidden;
+}
+
+.ball {
+    position: absolute;
+    width: 65px;
+    height: 65px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 4px solid white;
+    box-shadow: 0 5px 12px rgba(0,0,0,0.2);
+    transition: transform 0.15s;
+}
+
+.ball:hover {
+    transform: scale(1.15);
+}
+
+button {
+    margin-top: 20px;
+    padding: 13px 30px;
+    border: none;
+    border-radius: 15px;
+    background: #ff6b6b;
+    color: white;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+button:hover {
+    transform: scale(1.05);
+}
+
+#message {
+    font-size: 22px;
+    font-weight: bold;
+    min-height: 30px;
+    margin-top: 12px;
+}
+
+#startScreen {
+    position: fixed;
+    inset: 0;
+    background: linear-gradient(135deg, #fff4b8, #b8f2ff);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    z-index: 10;
+}
+
+.startBox {
+    background: white;
+    padding: 40px;
+    border-radius: 25px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+}
+
+.startBox h2 {
+    font-size: 38px;
+    color: #ff6b6b;
+}
+
+#resultScreen {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(255,255,255,0.96);
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    z-index: 20;
+}
+
+.resultBox {
+    padding: 40px;
+}
+
+.resultBox h2 {
+    font-size: 42px;
+    color: #ff6b6b;
+}
+
+@media(max-width:600px) {
+
+    .game {
+        width: 95%;
+        padding: 15px;
+    }
+
+    h1 {
+        font-size: 32px;
+    }
+
+    .info {
+        font-size: 16px;
+    }
+
+    #gameArea {
+        height: 300px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<!-- START SCREEN -->
+
+<div id="startScreen">
+
+    <div class="startBox">
+
+        <h2>🌈 Color Catcher 🌈</h2>
+
+        <p>Catch the correct color!</p>
+
+        <p>👆 Click the color shown above.</p>
+
+        <button onclick="startGame()">START GAME 🎮</button>
+
+    </div>
+
+</div>
+
+
+<!-- GAME -->
+
+<div class="game">
+
+    <h1>🌈 Color Catcher</h1>
+
+    <p class="subtitle">
+        Catch the correct color!
+    </p>
+
+    <div class="info">
+
+        <div>
+            ⭐ Score:
+            <span id="score">0</span>
+        </div>
+
+        <div>
+            ⏱️ Time:
+            <span id="time">30</span>
+        </div>
+
+        <div>
+            🏆 Level:
+            <span id="level">1</span>
+        </div>
+
+    </div>
+
+
+    <div class="target">
+
+        Catch:
+        <span id="targetColor">RED ❤️</span>
+
+    </div>
+
+
+    <div id="gameArea"></div>
+
+
+    <div id="message"></div>
+
+</div>
+
+
+<!-- RESULT -->
+
+<div id="resultScreen">
+
+    <div class="resultBox">
+
+        <h2>🎉 Great Job! 🎉</h2>
+
+        <p id="finalMessage"></p>
+
+        <button onclick="restartGame()">
+            PLAY AGAIN 🔄
+        </button>
+
+    </div>
+
+</div>
+
+
+<script>
+
+let score = 0;
+let time = 30;
+let level = 1;
+let gameRunning = false;
+let timer;
+
+const colors = [
+    {
+        name: "RED",
+        value: "#ff4d4d",
+        emoji: "❤️"
+    },
+    {
+        name: "BLUE",
+        value: "#4d8cff",
+        emoji: "💙"
+    },
+    {
+        name: "YELLOW",
+        value: "#ffd93d",
+        emoji: "💛"
+    },
+    {
+        name: "GREEN",
+        value: "#55d66b",
+        emoji: "💚"
+    }
+];
+
+let target;
+
+
+function startGame() {
+
+    document.getElementById("startScreen").style.display = "none";
+
+    score = 0;
+    time = 30;
+    level = 1;
+
+    gameRunning = true;
+
+    updateInfo();
+    createBalls();
+
+    timer = setInterval(function() {
+
+        time--;
+
+        updateInfo();
+
+        if(time <= 0) {
+            endGame();
+        }
+
+    }, 1000);
+}
+
+
+function updateInfo() {
+
+    document.getElementById("score").innerText = score;
+    document.getElementById("time").innerText = time;
+    document.getElementById("level").innerText = level;
+
+}
+
+
+function chooseTarget() {
+
+    let availableColors;
+
+    if(level === 1) {
+
+        availableColors = colors.slice(0, 2);
+
+    } else if(level === 2) {
+
+        availableColors = colors.slice(0, 3);
+
+    } else {
+
+        availableColors = colors;
+
+    }
+
+    target =
+        availableColors[
+            Math.floor(Math.random() * availableColors.length)
+        ];
+
+    document.getElementById("targetColor").innerText =
+        target.name + " " + target.emoji;
+
+}
+
+
+function createBalls() {
+
+    const gameArea =
+        document.getElementById("gameArea");
+
+    gameArea.innerHTML = "";
+
+    chooseTarget();
+
+    let numberOfBalls = 6;
+
+    for(let i = 0; i < numberOfBalls; i++) {
+
+        let color;
+
+        if(i === 0) {
+
+            color = target;
+
+        } else {
+
+            let availableColors;
+
+            if(level === 1) {
+                availableColors = colors.slice(0, 2);
+            } else if(level === 2) {
+                availableColors = colors.slice(0, 3);
+            } else {
+                availableColors = colors;
+            }
+
+            color =
+                availableColors[
+                    Math.floor(
+                        Math.random() *
+                        availableColors.length
+                    )
+                ];
+        }
+
+
+        const ball =
+            document.createElement("div");
+
+        ball.classList.add("ball");
+
+        ball.style.backgroundColor =
+            color.value;
+
+        ball.style.left =
+            Math.random() *
+            (gameArea.clientWidth - 70) + "px";
+
+        ball.style.top =
+            Math.random() *
+            (gameArea.clientHeight - 70) + "px";
+
+
+        ball.onclick = function() {
+
+            if(!gameRunning) return;
+
+            if(color.name === target.name) {
+
+                score++;
+
+                document.getElementById("message").innerText =
+                    "🎉 Correct! Amazing!";
+
+                if(score >= 5 && level === 1) {
+                    level = 2;
+                }
+
+                if(score >= 10 && level === 2) {
+                    level = 3;
+                }
+
+            } else {
+
+                score--;
+
+                if(score < 0) {
+                    score = 0;
+                }
+
+                document.getElementById("message").innerText =
+                    "😊 Try again!";
+
+            }
+
+            updateInfo();
+
+            createBalls();
+
+        };
+
+
+        gameArea.appendChild(ball);
+
+    }
+
+}
+
+
+function endGame() {
+
+    gameRunning = false;
+
+    clearInterval(timer);
+
+    document.getElementById("resultScreen")
+        .style.display = "flex";
+
+    document.getElementById("finalMessage")
+        .innerText =
+        "You scored " + score +
+        " points! ⭐ You are a Color Master! 🌈";
+
+}
+
+
+function restartGame() {
+
+    document.getElementById("resultScreen")
+        .style.display = "none";
+
+    startGame();
+
+}
+
+</script>
+
+</body>
+</html>
